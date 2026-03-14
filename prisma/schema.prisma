@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        String       @default("AGENT") // AGENT, SUPERVISOR, ADMIN
+  submissions Submission[]
+  assignments Assignment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Department {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  block         String?
+  category      String?
+  formTemplates FormTemplate[]
+  submissions   Submission[]
+  createdAt     DateTime       @default(now())
+}
+
+model FormTemplate {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  description  String?
+  department   Department   @relation(fields: [departmentId], references: [id])
+  departmentId String
+  fields       String       // JSON string of field definitions
+  isActive     Boolean      @default(true)
+  assignments  Assignment[]
+  submissions  Submission[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Assignment {
+  id        String   @id @default(cuid())
+  agent     User     @relation(fields: [agentId], references: [id])
+  agentId   String
+  form      FormTemplate @relation(fields: [formId], references: [id])
+  formId    String
+  date      DateTime
+  status    String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, MISSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agentId, formId, date])
+}
+
+model Submission {
+  id           String       @id @default(cuid())
+  agent        User         @relation(fields: [agentId], references: [id])
+  agentId      String
+  form         FormTemplate @relation(fields: [formId], references: [id])
+  formId       String
+  department   Department   @relation(fields: [departmentId], references: [id])
+  departmentId String
+  data         String       // JSON string of form responses
+  date         DateTime
+  reportTime   String?
+  preparedBy   String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
