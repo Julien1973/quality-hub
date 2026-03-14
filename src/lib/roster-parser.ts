@@ -139,7 +139,7 @@ function isSkipLine(line: string): boolean {
   return false;
 }
 
-function isRotaLine(line: string): { day: number; names: string[] } | null {
+function isRotaLine(line: string): { day: number; staffNames: string[] } | null {
   const match = line.trim().match(DAY_PATTERN);
   if (!match) return null;
 
@@ -176,7 +176,7 @@ function isRotaLine(line: string): { day: number; names: string[] } | null {
 
   // Deduplicate
   const unique = [...new Set(names)];
-  return unique.length > 0 ? { day: dayNum, names: unique } : null;
+  return unique.length > 0 ? { day: dayNum, staffNames: unique } : null;
 }
 
 export function parseRosterText(text: string): ParsedRoster {
