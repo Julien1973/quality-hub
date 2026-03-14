@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import WardSummary from "@/components/WardSummary";
 import {
   ClipboardList,
   FileText,
@@ -232,6 +233,11 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Ward Summary - visible to Supervisors and Admins */}
+      {(session?.user?.role === "ADMIN" || session?.user?.role === "SUPERVISOR") && (
+        <WardSummary />
+      )}
     </div>
   );
 }

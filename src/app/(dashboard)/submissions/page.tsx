@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { FileText, Filter, ChevronDown, ChevronUp, Eye } from "lucide-react";
+import { FileText, Filter, ChevronDown, ChevronUp, Eye, Download } from "lucide-react";
 
 interface Submission {
   id: string;
@@ -74,13 +74,23 @@ export default function SubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Submissions</h1>
-        <p className="text-gray-500 mt-1">
-          {session?.user?.role === "AGENT"
-            ? "View your submitted reports"
-            : `All submitted reports (${total} total)`}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Submissions</h1>
+          <p className="text-gray-500 mt-1">
+            {session?.user?.role === "AGENT"
+              ? "View your submitted reports"
+              : `All submitted reports (${total} total)`}
+          </p>
+        </div>
+        <a
+          href="/api/submissions/export"
+          download
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Download CSV
+        </a>
       </div>
 
       {submissions.length === 0 ? (
