@@ -337,6 +337,19 @@ export function getAllStaffNames(roster: ParsedRoster): string[] {
   return Array.from(names).sort();
 }
 
+// Staff tier classification based on role title
+export type StaffTier = "ho" | "registrar" | "smo" | "consultant" | "other";
+
+function classifyRole(roleTitle: string): StaffTier {
+  const lower = roleTitle.toLowerCase();
+  if (/house\s*officer/i.test(lower) || lower === "ho" || /intern/i.test(lower)) return "ho";
+  if (/registrar/i.test(lower) && !/smo/i.test(lower)) return "registrar";
+  if (/smo/i.test(lower) && /reg/i.test(lower)) return "registrar"; // SMO/Reg grouped as registrar tier
+  if (/smo/i.test(lower)) return "smo";
+  if (/consultant/i.test(lower)) return "consultant";
+  return "other";
+}
+
 // Get staff for a specific department
 export function getStaffByDepartment(roster: ParsedRoster, deptName: string): StaffMember[] {
   const dept = roster.departments.find(
@@ -354,6 +367,34 @@ export function getStaffByDepartment(roster: ParsedRoster, deptName: string): St
     }
   }
   return allStaff;
+}
+
+// Get staff for a specific department, grouped by tier
+export function getStaffByDepartmentGrouped(
+  roster: ParsedRoster,
+  deptName: string
+): Record<StaffTier, StaffMember[]> {
+  const result: Record<StaffTier, StaffMember[]> = {
+    ho: [],
+    registrar: [],
+    smo: [],
+    consultant: [],
+    other: [],
+  };
+  const dept = roster.departments.find(
+    (d) => d.name.toLowerCase().includes(deptName.toLowerCase())
+  );
+  if (!dept) return result;
+
+  for (const role of dept.roles) {
+    const tier = classifyRole(role.title);
+    for (const staff of role.staff) {
+      if (!result[tier].find((s) => s.name === staff.name)) {
+        result[tier].push(staff);
+      }
+    }
+  }
+  return result;
 }
 
 // Get staff on duty for a specific department on a specific day of the month

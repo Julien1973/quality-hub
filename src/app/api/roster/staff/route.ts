@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { ParsedRoster } from "@/lib/roster-parser";
-import { getStaffByDepartment, getStaffOnDuty } from "@/lib/roster-parser";
+import { getStaffByDepartment, getStaffByDepartmentGrouped, getStaffOnDuty } from "@/lib/roster-parser";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
     // Get all staff for the department
     const allStaff = getStaffByDepartment(parsed, department);
 
+    // Get staff grouped by tier (ho, registrar, smo, consultant)
+    const grouped = getStaffByDepartmentGrouped(parsed, department);
+
     // Get staff on duty for specific day
     let onDuty: string[] = [];
     try {
@@ -47,6 +50,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       staff: allStaff,
+      grouped: {
+        ho: grouped.ho.map(s => s.name),
+        registrar: grouped.registrar.map(s => s.name),
+        smo: grouped.smo.map(s => s.name),
+        consultant: grouped.consultant.map(s => s.name),
+      },
       onDuty,
       allNames,
       hasRoster: true,

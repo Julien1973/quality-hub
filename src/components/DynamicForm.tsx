@@ -15,30 +15,52 @@ interface DynamicFormProps {
   fields: FormField[];
 }
 
-// Field names that should use the staff dropdown
-const STAFF_FIELD_NAMES = [
-  "consultantincharge",
-  "regrostered",
-  "hosrostered",
-  "nurseIncharge",
-  "firstcontactphysician",
-  "preparedby",
-  "infogivenby",
-  "staffinfogiven",
-  "pendingadmissionsinfo",
-  "obsgyn",
+// Staff tier type matching roster-parser
+type StaffTier = "ho" | "registrar" | "smo" | "consultant" | "all";
+
+// Non-doctor staff roles — these should NOT use the doctor roster dropdown
+const NON_DOCTOR_PREFIXES = [
+  "rn", "ena", "ecgtech", "pca", "emt", "attendant", "cro", "clerk",
+  "nurse", "porter", "security", "housekeeper", "pharmacist",
 ];
 
-function isStaffField(fieldName: string): boolean {
+// Determine which staff tier a field should show (null = no staff dropdown)
+function getStaffTier(fieldName: string): StaffTier | null {
   const lower = fieldName.toLowerCase();
-  return (
-    STAFF_FIELD_NAMES.some((n) => lower.includes(n.toLowerCase())) ||
-    lower.includes("rostered") ||
-    lower.includes("incharge") ||
-    lower.includes("givenby") ||
+
+  // Exclude non-doctor staff fields — they're not on the doctor roster
+  for (const prefix of NON_DOCTOR_PREFIXES) {
+    if (lower.startsWith(prefix)) return null;
+  }
+
+  // House Officers fields
+  if (lower.includes("hosrostered") || lower === "hosabsent") return "ho";
+
+  // Registrar fields
+  if (lower.includes("regrostered") || lower === "regabsent") return "registrar";
+
+  // Consultant fields
+  if (lower.includes("consultant")) return "consultant";
+
+  // First contact physician = registrar tier (SMO/Reg)
+  if (lower.includes("firstcontactphysician")) return "registrar";
+
+  // OBSGYN = registrar tier
+  if (lower.includes("obsgyn")) return "registrar";
+
+  // Generic doctor fields — show all doctors
+  if (
     lower.includes("physician") ||
-    lower.includes("consultant")
-  );
+    lower.includes("preparedby") ||
+    lower.includes("givenby") ||
+    lower.includes("staffinfogiven") ||
+    lower.includes("pendingadmissionsinfo") ||
+    lower.includes("infogivenby")
+  ) {
+    return "all";
+  }
+
+  return null;
 }
 
 function formatDate(d: Date): string {
@@ -61,6 +83,7 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
 
   // Roster staff data
   const [staffNames, setStaffNames] = useState<string[]>([]);
+  const [groupedStaff, setGroupedStaff] = useState<Record<string, string[]>>({});
   const [onDutyNames, setOnDutyNames] = useState<string[]>([]);
   const [hasRoster, setHasRoster] = useState(false);
 
@@ -106,6 +129,10 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
           // Combine dept + all for a comprehensive list
           setStaffNames([...new Set([...deptStaffNames, ...allNames])].sort());
           setOnDutyNames(data.onDuty || []);
+          // Store grouped staff by tier
+          if (data.grouped) {
+            setGroupedStaff(data.grouped);
+          }
         }
       })
       .catch(() => {});
@@ -244,7 +271,23 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
         }
 
         // Use staff dropdown for staff-name fields when roster is loaded
-        const useStaffDropdown = hasRoster && field.type === "text" && isStaffField(field.name);
+        const tier = getStaffTier(field.name);
+        const useStaffDropdown = hasRoster && (field.type === "text" || field.type === "textarea") && tier !== null;
+
+        // Get the right staff list for this field's tier
+        let fieldStaffNames = staffNames;
+        if (useStaffDropdown && tier !== "all") {
+          const tierNames = groupedStaff[tier] || [];
+          // For registrar tier, also include SMOs (they're often grouped)
+          if (tier === "registrar") {
+            fieldStaffNames = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+          } else if (tier === "consultant") {
+            // Consultants may also include SMOs
+            fieldStaffNames = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+          } else {
+            fieldStaffNames = tierNames.sort();
+          }
+        }
 
         return (
           <div key={field.name}>
@@ -261,7 +304,7 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
                 id={field.name}
                 value={String(formData[field.name] ?? "")}
                 onChange={(val) => handleChange(field.name, val)}
-                staffNames={staffNames}
+                staffNames={fieldStaffNames}
                 defaultNames={onDutyNames}
                 placeholder={field.placeholder || "Search staff..."}
                 required={field.required}
