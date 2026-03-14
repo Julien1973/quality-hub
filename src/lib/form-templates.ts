@@ -1,7 +1,7 @@
 export interface FormField {
   name: string;
   label: string;
-  type: "text" | "number" | "textarea" | "select" | "time" | "section" | "stafflist" | "repeater";
+  type: "text" | "number" | "textarea" | "select" | "time" | "date" | "section" | "stafflist" | "repeater";
   required?: boolean;
   options?: string[];
   placeholder?: string;
@@ -34,8 +34,8 @@ export const departmentTemplates: DepartmentTemplate[] = [
         slug: "ae-update",
         description: "Accident and Emergency Department status update",
         fields: [
-          { name: "reportTime", label: "Report Time", type: "text", required: true, placeholder: "e.g. 5AM" },
-          { name: "date", label: "Date", type: "text", required: true },
+          { name: "reportTime", label: "Report Time", type: "time", required: true },
+          { name: "date", label: "Date", type: "date", required: true },
           // Staffing Section
           { name: "_staffing", label: "Staffing", type: "section" },
           { name: "consultantInCharge", label: "Consultant in Charge", type: "text", required: true },

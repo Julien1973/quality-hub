@@ -59,6 +59,17 @@ model Assignment {
   @@unique([agentId, formId, date])
 }
 
+model Roster {
+  id           String   @id @default(cuid())
+  name         String   // e.g. "March 2026 HO & SMO Roster"
+  month        String   // e.g. "2026-03"
+  data         String   // JSON: { departments: [{ name, roles: [{ title, staff: [{ name, phone }] }] }] }
+  uploadedBy   String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Submission {
   id           String       @id @default(cuid())
   agent        User         @relation(fields: [agentId], references: [id])

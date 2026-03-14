@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Activity,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Forms", href: "/forms", icon: ClipboardList, roles: ["ADMIN", "SUPERVISOR", "AGENT"] },
   { name: "Submissions", href: "/submissions", icon: FileText, roles: ["ADMIN", "SUPERVISOR", "AGENT"] },
   { name: "Manage Users", href: "/admin/users", icon: Users, roles: ["ADMIN"] },
+  { name: "Staff Roster", href: "/admin/roster", icon: CalendarDays, roles: ["ADMIN", "SUPERVISOR"] },
 ];
 
 export default function Sidebar() {

@@ -50,6 +50,7 @@ export default async function FormPage({ params }: Props) {
         <DynamicForm
           formId={form.id}
           departmentId={form.department.id}
+          departmentName={form.department.name}
           formName={form.name}
           fields={fields}
         />
