@@ -355,19 +355,22 @@ function classifyRole(roleTitle: string): StaffTier {
   return "other";
 }
 
-// Get staff for a specific department
+// Get staff for a specific department (searches ALL matching departments and merges)
 export function getStaffByDepartment(roster: ParsedRoster, deptName: string): StaffMember[] {
-  const dept = roster.departments.find(
-    (d) => d.name.toLowerCase().includes(deptName.toLowerCase())
+  const matchingDepts = roster.departments.filter(
+    (d) => d.name.toLowerCase().includes(deptName.toLowerCase()) ||
+      deptName.toLowerCase().includes(d.name.toLowerCase())
   );
-  if (!dept) return [];
+  if (matchingDepts.length === 0) return [];
   const allStaff: StaffMember[] = [];
   const seen = new Set<string>();
-  for (const role of dept.roles) {
-    for (const staff of role.staff) {
-      if (!seen.has(staff.name)) {
-        seen.add(staff.name);
-        allStaff.push(staff);
+  for (const dept of matchingDepts) {
+    for (const role of dept.roles) {
+      for (const staff of role.staff) {
+        if (!seen.has(staff.name)) {
+          seen.add(staff.name);
+          allStaff.push(staff);
+        }
       }
     }
   }
@@ -386,16 +389,19 @@ export function getStaffByDepartmentGrouped(
     consultant: [],
     other: [],
   };
-  const dept = roster.departments.find(
-    (d) => d.name.toLowerCase().includes(deptName.toLowerCase())
+  const matchingDepts = roster.departments.filter(
+    (d) => d.name.toLowerCase().includes(deptName.toLowerCase()) ||
+      deptName.toLowerCase().includes(d.name.toLowerCase())
   );
-  if (!dept) return result;
+  if (matchingDepts.length === 0) return result;
 
-  for (const role of dept.roles) {
-    const tier = classifyRole(role.title);
-    for (const staff of role.staff) {
-      if (!result[tier].find((s) => s.name === staff.name)) {
-        result[tier].push(staff);
+  for (const dept of matchingDepts) {
+    for (const role of dept.roles) {
+      const tier = classifyRole(role.title);
+      for (const staff of role.staff) {
+        if (!result[tier].find((s) => s.name === staff.name)) {
+          result[tier].push(staff);
+        }
       }
     }
   }
