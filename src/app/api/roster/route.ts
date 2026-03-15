@@ -20,13 +20,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Read PDF and extract text
-    const buffer = Buffer.from(await file.arrayBuffer());
-    // Dynamic import of pdf-parse
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
-    const pdfData = await pdfParse(buffer);
-    const text = pdfData.text;
+    // Read PDF and extract text using unpdf (works in serverless environments)
+    const { extractText } = await import("unpdf");
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    const { text: pages } = await extractText(buffer);
+    const text = pages.join("\n");
 
     // Parse the roster text
     const parsed = parseRosterText(text);
