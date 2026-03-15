@@ -88,6 +88,7 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
   const [staffNames, setStaffNames] = useState<string[]>([]);
   const [groupedStaff, setGroupedStaff] = useState<Record<string, string[]>>({});
   const [onDutyNames, setOnDutyNames] = useState<string[]>([]);
+  const [onDutyByTier, setOnDutyByTier] = useState<Record<string, string[]>>({});
   const [hasRoster, setHasRoster] = useState(false);
 
   // Initialize form with smart defaults
@@ -118,7 +119,7 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
     setFormData(initializeForm());
   }, [initializeForm]);
 
-  // Load roster staff
+  // Load roster staff and auto-populate rostered fields with on-duty staff
   useEffect(() => {
     const dayOfMonth = new Date().getDate();
     fetch(`/api/roster/staff?department=${encodeURIComponent(departmentName)}&day=${dayOfMonth}`)
@@ -126,20 +127,36 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
       .then((data) => {
         if (data.hasRoster) {
           setHasRoster(true);
-          // Use allNames for generic staff fields, department staff for department-specific
           const deptStaffNames = data.staff?.map((s: { name: string }) => s.name) || [];
           const allNames = data.allNames || [];
-          // Combine dept + all for a comprehensive list
           setStaffNames([...new Set([...deptStaffNames, ...allNames])].sort());
           setOnDutyNames(data.onDuty || []);
-          // Store grouped staff by tier
           if (data.grouped) {
             setGroupedStaff(data.grouped);
+          }
+          if (data.onDutyByTier) {
+            setOnDutyByTier(data.onDutyByTier);
+            // Auto-populate rostered textarea fields with on-duty staff by tier
+            setFormData((prev) => {
+              const updated = { ...prev };
+              for (const field of fields) {
+                const tier = getStaffTier(field.name);
+                const lower = field.name.toLowerCase();
+                // Only auto-fill "rostered" fields (not absent, not single-name fields)
+                if (tier && lower.includes("rostered") && !updated[field.name]) {
+                  const tierNames = data.onDutyByTier[tier] || [];
+                  if (tierNames.length > 0) {
+                    updated[field.name] = tierNames.join(", ");
+                  }
+                }
+              }
+              return updated;
+            });
           }
         }
       })
       .catch(() => {});
-  }, [departmentName]);
+  }, [departmentName, fields]);
 
   // Check if previous submission exists
   useEffect(() => {
