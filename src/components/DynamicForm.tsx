@@ -278,17 +278,18 @@ export default function DynamicForm({ formId, departmentId, departmentName, form
         const useStaffDropdown = hasRoster && (field.type === "text" || field.type === "textarea") && tier !== null;
 
         // Get the right staff list for this field's tier
+        // Always fall back to full roster list if tier-specific list is empty
         let fieldStaffNames = staffNames;
         if (useStaffDropdown && tier !== "all") {
           const tierNames = groupedStaff[tier] || [];
-          // For registrar tier, also include SMOs (they're often grouped)
           if (tier === "registrar") {
-            fieldStaffNames = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+            const combined = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+            fieldStaffNames = combined.length > 0 ? combined : staffNames;
           } else if (tier === "consultant") {
-            // Consultants may also include SMOs
-            fieldStaffNames = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+            const combined = [...new Set([...tierNames, ...(groupedStaff["smo"] || [])])].sort();
+            fieldStaffNames = combined.length > 0 ? combined : staffNames;
           } else {
-            fieldStaffNames = tierNames.sort();
+            fieldStaffNames = tierNames.length > 0 ? tierNames.sort() : staffNames;
           }
         }
 

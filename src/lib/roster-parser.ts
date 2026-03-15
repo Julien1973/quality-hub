@@ -342,10 +342,15 @@ export type StaffTier = "ho" | "registrar" | "smo" | "consultant" | "other";
 
 function classifyRole(roleTitle: string): StaffTier {
   const lower = roleTitle.toLowerCase();
-  if (/house\s*officer/i.test(lower) || lower === "ho" || /intern/i.test(lower)) return "ho";
+  // HO / House Officers / Interns
+  if (/house\s*officer/i.test(lower) || /\bho\b/.test(lower) || /intern/i.test(lower)) return "ho";
+  // Registrar (without SMO)
   if (/registrar/i.test(lower) && !/smo/i.test(lower)) return "registrar";
-  if (/smo/i.test(lower) && /reg/i.test(lower)) return "registrar"; // SMO/Reg grouped as registrar tier
+  // SMO/Reg combined → registrar tier
+  if (/smo/i.test(lower) && /reg/i.test(lower)) return "registrar";
+  // SMO alone
   if (/smo/i.test(lower)) return "smo";
+  // Consultant
   if (/consultant/i.test(lower)) return "consultant";
   return "other";
 }
